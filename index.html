@@ -106,9 +106,13 @@
                     count_healthy++;break;
                 case "#FFFF00":
                     count_contacted++;break;
-                case "#66ccff":
+                case "#66CCFF":
                     count_quarantine++;break;
             }
+
+            //console.log(count_quarantine);
+            //console.log(count_dead);
+
             if(d.color=="#FF0000")
             {
                 if(Math.random()<death_rate)
