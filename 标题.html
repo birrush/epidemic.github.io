@@ -1,0 +1,199 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<title>给爷爬</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+		<link rel="stylesheet" href="./main.css" />
+		<script src = "https://d3js.org/d3.v4.min.js"></script>
+        <script src = "./event.js"></script>
+        <style  type="text/css">
+			/* li:hover{
+                color:orange;
+			} */
+		</style>
+	</head>
+	<body class="homepage is-preload">
+		<div id="page-wrapper">
+
+			<!-- Header -->
+				<section id="header">
+					<div class="container">
+
+						<!-- Logo -->
+							<h1 id="logo"><a href="index.html"></a></h1>
+							<p></p>
+
+						<!-- Nav -->
+							<nav id="nav">
+								<ul >
+									<li ><img src="./1.ico" height="25" width="25"><button id=bt1 onclick='g(this.id)'>口罩设置</button></img></li>
+									<li ><img src="./2.ico" height="25" width="25"><button id=bt2 onclick='g(this.id)'> 死亡率</button></img></li>
+									<li ><img src="./3.ico" height="25" width="25"><button id=bt3 onclick='g(this.id)'> 人数设置</button></img></li>
+									<li ><img src="./4.ico" height="25" width="25"><button id=bt4 onclick='g(this.id)'>社交距离</button></img></li>
+									<li ><img src="./5.ico" height="25" width="25"><button id=bt5 onclick='g(this.id)'>速率调节</button></img></li>
+								</ul>
+                            </nav>
+                    </div>
+                </section>   
+		</div>         
+	<script>
+    function g(x)
+    {
+    d=document.getElementById(x);
+    d.style.background='red';
+    if(x=='bt1')
+    {
+       // init();
+        posb_infection_contacted=5;
+        infection_radio=20*2;//the radio of infection
+        resistence_radio=50*6;
+    }
+    if(x=='bt2'){
+        //init();
+        death_rate=0.001;
+       // d.style.background='green';
+    }
+    if(x=='bt3') {
+        d3.select('svg').remove();   //删除整个SVG
+        d3.select('svg')
+            .selectAll('*')
+            .remove();   
+        //init();   
+        start = Date.now(),
+        frames = 0;
+        num_init=1000;
+        procced();
+    }
+    if(x=='bt4')
+    {
+        //init();
+        speedadd=100;
+    }
+    if(x=='bt5')
+    {
+        //init();
+        k_resistence=0;
+        speedadd=10;
+    }
+    }
+    init();
+    procced();
+   d3.timer(function () {
+    // Update the FPS meter.
+    var now = Date.now(), duration = now - start;
+    //text.text(~~(++frames * 1000 / duration));
+    if (duration >= 1000) frames = 0, start = now;
+
+    // Update the circle positions.
+    count_healthy=0;
+    count_sick=0;
+    count_contacted=0;
+    count_dead=0;
+    count_quarantine=0;
+    //count the number of all things 
+    circle
+        .attr("cx", function (d) {if(d.color=="#CCCCCC"||d.color=="#66CCFF")return d.x; d.x += d.dx; if (d.x > w||d.x<0) d.dx=-d.dx; return d.x; })
+        .attr("cy", function (d) {if(d.color=="#CCCCCC"||d.color=="#66CCFF")return d.y; d.y += d.dy; if (d.y > h || d.y < 0) d.dy=-d.dy; return d.y; })
+        .style("fill",function(d){
+            switch(d.color)
+            {
+                case "#FF0000":
+                    count_sick++;break;
+                case "#CCCCCC":
+                    count_dead++;break;
+                case "#98FB98":
+                    count_healthy++;break;
+                case "#FFFF00":
+                    count_contacted++;break;
+                case "#66ccff":
+                    count_quarantine++;break;
+            }
+            if(d.color=="#FF0000")
+            {
+                if(Math.random()<death_rate)
+                {
+                    d.color="#CCCCCC";
+                }else if(Math.random()<health_rate)
+                {
+                    d.color="#98FB98";//be cured
+                }
+            }
+            if(d.color=="#CCCCCC"||d.color=="#66CCFF")return d.color;
+            var ax=0,ay=0;
+            x=circle.each(function(e,i)
+            {
+                if(e.color=="#CCCCCC"||e.color=="#66CCFF")return d.color;
+                if(e!=d)
+                {
+                    var distance=Math.hypot(e.x-d.x,e.y-d.y);
+                    //not everyone want to touch other easily so we choose to use a repulsion
+                    if(distance==0)
+                        distance=0.001;//to avoid the NaN
+                    if(distance<resistence_radio)//social disconnection
+                    {
+                        ax+=(e.x-d.x)/(distance*distance);
+                        ay+=(e.y-d.y)/(distance*distance);
+                    }
+                    if(e.color=="#FF0000")
+                    {//touch the patient
+                        
+                        if(distance<infection_radio)
+                        {
+                            var posb=posb_infection_contacted/(distance*distance+0.01)-0.01;
+                            //the posibility of infection is inversely proportional to distance
+                            if(Math.random()<posb)//the possibility of infection each frame
+                                    d.color="#FF0000";//marked as a patient
+                            else
+                                if(d.color=="#98FB98")
+                                    d.color="#FFFF00";//marked as a close contact
+                        }
+                    }
+                }
+            });
+            d.dx+=ax*k_resistence*speedadd;
+            d.dy+=ay*k_resistence*speedadd;
+            if(Math.hypot(d.dx,d.dy)>0.6)
+            {
+                var v=Math.hypot(d.dx,d.dy);
+                d.dx=0.6*d.dx/v;
+                d.dy=0.6*d.dy/v;
+            }
+            return d.color;
+        })
+        .on("click",function(d){if(d.color!="#CCCCCC"&&d.color!="#66CCFF") d.color="#FF0000";})
+        .on("dblclick",function(d){if(d.color=="#FF0000") d.color="#66CCFF";});
+        
+
+    //begin update text
+    text.selectAll("tspan").remove();
+    text.selectAll("tspan")
+    .data(Array("healthy:"+count_healthy,
+                "contacted:"+count_contacted,
+                "sick:"+count_sick,
+                "dead:"+count_dead,
+                "quarantine:"+count_quarantine
+                )) 
+    .enter() 
+    .append("tspan") 
+    .attr("x",text.attr("x")) 
+    .attr("dy","1em") 
+    .text(function(d){ 
+     return d; 
+    });
+    //end update text
+
+    //begin update rect
+    rect
+        .attr("y",function(d,i){
+            return h-d.num()*rectH;
+        } )
+        .attr("height",function(d,i){
+            return d.num()*rectH;} );
+    //end update rect
+    }
+);
+    </script>
+						
+	</body>
+</html>
